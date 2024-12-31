@@ -1,7 +1,6 @@
 import unittest
 import pandas as pd
 import numpy as np
-from io import StringIO
 
 # Import the function to be tested
 from datafunctions import format_join
