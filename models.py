@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import ttest_ind
 from datafunctions import format_join
+from sklearn.linear_model import LinearRegression
+
 joineddf=format_join(pd.read_csv('daily-covid-19-vaccine-doses.csv'),pd.read_csv('daily-new-confirmed-covid-19-cases.csv'))
  
 joineddf.rename(columns={
@@ -37,39 +39,50 @@ def trend_analysis(data):
         
         # Title and legend
         plt.title(f"Trends in Vaccination and COVID-19 Cases: {region}")
-        fig.tight_layout()
         plt.legend(loc="upper left")
         plt.show()
 
-def lag_analysis(data, max_lag=30):
-    lags = range(0, max_lag + 1)
-    correlations = []
+def lag_analysis_region(data, selected_regions=None, max_lag_weeks=30):
+    if selected_regions is None:
+        selected_regions = ['Africa', 'Asia', 'North America', 'South America', 'Europe','Oceania']
+    
+    lags = range(0, max_lag_weeks + 1)
+    region_correlations = {}
 
-    # Sort data by day
-    data = data.sort_values('Day')
+    # Filter data for selected regions
+    filtered_data = data[data['Region'].isin(selected_regions)]
 
-    # Get global values for vaccines and cases
-    vaccines = data['Vaccines'].values
-    cases = data['Cases'].values
+    # Loop through each region
+    for region in selected_regions:
+        subset = filtered_data[filtered_data['Region'] == region].sort_values('Day')
+        vaccines = subset['Vaccines'].values
+        cases = subset['Cases'].values
 
-    # Calculate correlations for each lag
-    for lag in lags:
-        if lag > 0:
-            correlations.append(np.corrcoef(vaccines[:-lag], cases[lag:])[0, 1])
-        else:
-            correlations.append(np.corrcoef(vaccines, cases)[0, 1])
+        # Calculate correlations for weekly lags
+        correlations = []
+        for lag in lags:
+            lag_days = lag * 30  # Make the lag months
+            if lag_days > 0 and lag_days < len(vaccines):
+                correlations.append(np.corrcoef(vaccines[:-lag_days], cases[lag_days:])[0, 1])
+            elif lag_days == 0:
+                correlations.append(np.corrcoef(vaccines, cases)[0, 1])
+            else:
+                correlations.append(np.nan)  # Append NaN for invalid lags
 
-    # Plot cross-correlation
-    plt.figure(figsize=(10, 6))
-    plt.plot(lags, correlations, marker='o', color='b', label='Global Correlation')
-    plt.title("Global Cross-Correlation Between Vaccines and Cases")
-    plt.xlabel("Lag (Days)")
+        region_correlations[region] = correlations
+
+    # Plot correlation for each region
+    plt.figure(figsize=(12, 8))
+    for region, correlations in region_correlations.items():
+        plt.plot(lags, correlations, marker='o', label=region)
+
+    plt.title("Regional Correlation Between Vaccines and Cases (Monthly Lag)")
+    plt.xlabel("Lag (Months)")
     plt.ylabel("Correlation")
-    plt.grid()
     plt.legend()
+    plt.grid()
     plt.show()
 
-    return correlations
 def hypothesis_testing(data):
     regions = data['Region'].unique()
     high_vaccine_regions = []
@@ -94,8 +107,49 @@ def hypothesis_testing(data):
     else:
         print("No significant difference between high and low vaccination regions.")
 
+def lagged_effect_analysis(data, lag_weeks=100):
+    # Convert lag from weeks to days (assuming 7 days per week)
+    lag_days = lag_weeks * 7 
+    
+    # Sort data by date
+    data = data.sort_values(['Region', 'Day']).reset_index(drop=True)
+    data = data[data['Region'].isin(['Africa', 'Asia', 'North America', 'South America', 'Europe','Oceania'])]
+    def apply_lag(group):
+        group = group.copy()
+        group['Lagged Cases'] = group['Cases'].shift(-lag_days)
+        return group
+    
+    lagged_data = data.groupby('Region').apply(apply_lag).reset_index(drop=True)
+    
+    # Drop rows with NaN values after shifting
+    lagged_data = lagged_data.dropna(subset=['Vaccines', 'Lagged Cases'])
+    # Linear regression to quantify relationship
+    X = lagged_data['Vaccines'].values.reshape(-1, 1)
+    y = lagged_data['Lagged Cases'].values
+    model = LinearRegression()
+    model.fit(X, y)
+    y_pred = model.predict(X)
+    
+    # Add regression line to the scatter plot
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(x=lagged_data['Vaccines'], y=lagged_data['Lagged Cases'], color='blue', label='Actual Data')
+    plt.plot(lagged_data['Vaccines'], y_pred, color='red', label='Regression Line')
+    plt.title(f"Vaccination Effect on COVID-19 Cases ({lag_weeks}-Week Lag)")
+    plt.xlabel("Vaccines (7-day avg per million)")
+    plt.ylabel(f"COVID-19 Cases (Lagged by {lag_weeks} weeks)")
+    plt.legend()
+    plt.grid()
+    plt.show()
+    
+    # Print regression summary
+    print(f"Regression Summary for {lag_weeks}-Week Lag:")
+    print(f"Intercept: {model.intercept_:.2f}")
+    print(f"Coefficient: {model.coef_[0]:.2f}")
+    print(f"R-squared: {model.score(X, y):.2f}")
 
 
-trend_analysis(joineddf)
-lag_analysis(joineddf)
-hypothesis_testing(joineddf)
+
+#trend_analysis(joineddf)
+#lag_analysis_region(joineddf)
+lagged_effect_analysis(joineddf, lag_weeks=100) 
+#hypothesis_testing(joineddf)
