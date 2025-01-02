@@ -17,11 +17,19 @@ joineddf.rename(columns={
 def trend_analysis(data):
     selected_regions = ['Africa', 'Asia', 'North America', 'South America', 'Europe']
     filtered_data = data[data['Region'].isin(selected_regions)]
-    
+
+    if filtered_data.empty:
+        print("No data available for selected regions.")
+        return
+
     plt.figure(figsize=(12, 6))
-    
+
     for region in selected_regions:
         subset = filtered_data[filtered_data['Region'] == region]
+        
+        if subset.empty:
+            print(f"No data available for region: {region}")
+            continue
         
         # Create the primary y-axis for cases
         fig, ax1 = plt.subplots(figsize=(12, 6))
@@ -41,6 +49,7 @@ def trend_analysis(data):
         plt.title(f"Trends in Vaccination and COVID-19 Cases: {region}")
         plt.legend(loc="upper left")
         plt.show()
+
 
 def lag_analysis_region(data, selected_regions=None, max_lag_weeks=30):
     if selected_regions is None:
@@ -151,5 +160,5 @@ def lagged_effect_analysis(data, lag_weeks=100):
 
 #trend_analysis(joineddf)
 #lag_analysis_region(joineddf)
-lagged_effect_analysis(joineddf, lag_weeks=100) 
+#lagged_effect_analysis(joineddf, lag_weeks=100) 
 #hypothesis_testing(joineddf)
