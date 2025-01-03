@@ -4,7 +4,7 @@ import numpy as np
 from unittest.mock import patch
 # Import the function to be tested
 from datafunctions import format_join
-from models import trend_analysis
+from models import trend_analysis,lag_analysis_region
 class TestReadFormatJoin(unittest.TestCase):
     def setUp(self):
         # Mock CSV data for testing
@@ -79,6 +79,55 @@ class TestTrendAnalysis(unittest.TestCase):
         
         with self.assertRaises(KeyError):
             trend_analysis(incomplete_data)  # Should raise KeyError due to missing 'Vaccines' column
+class TestLagAnalysisRegion(unittest.TestCase):
+    def setUp(self):
+        """Set up sample data for testing."""
+        self.data = pd.DataFrame({
+            'Day': pd.date_range(start='2021-01-01', periods=60),
+            'Region': ['Africa'] * 30 + ['Asia'] * 30,
+            'Vaccines': list(range(1, 31)) * 2,
+            'Cases': list(range(1, 31)) * 2
+        })
 
+    def test_lag_analysis_region_default(self):
+        """Test lag_analysis_region with default parameters."""
+        result = lag_analysis_region(self.data)
+        self.assertIn('Africa', result)
+        self.assertIn('Asia', result)
+        self.assertEqual(len(result['Africa']), 31)  # 0 to max_lag_weeks (30) inclusive
+        self.assertEqual(len(result['Asia']), 31)
+
+    def test_lag_analysis_region_custom_regions(self):
+        """Test lag_analysis_region with custom selected regions."""
+        selected_regions = ['Africa']
+        result = lag_analysis_region(self.data, selected_regions=selected_regions)
+        self.assertIn('Africa', result)
+        self.assertNotIn('Asia', result)
+
+    def test_lag_analysis_region_empty_data(self):
+        """Test lag_analysis_region with an empty DataFrame."""
+        empty_data = pd.DataFrame(columns=['Day', 'Region', 'Vaccines', 'Cases'])
+        result = lag_analysis_region(empty_data)
+        self.assertEqual(result, {})  # Should return an empty dictionary
+
+    def test_lag_analysis_region_partial_overlap(self):
+        """Test lag_analysis_region when lag exceeds available data."""
+        # Modify data to create a shorter time series
+        data_short = self.data[self.data['Region'] == 'Africa'].iloc[:10]  # Only 10 days
+        result = lag_analysis_region(data_short, selected_regions=['Africa'], max_lag_months=5)
+        
+        self.assertEqual(len(result['Africa']), 6)  # Lags 0 through 5
+        self.assertTrue(np.isnan(result['Africa'][-1]))  # The last lag should be NaN due to insufficient data
+
+    def test_lag_analysis_region_missing_columns(self):
+        """Test lag_analysis_region with missing columns."""
+        incomplete_data = pd.DataFrame({
+            'Day': pd.date_range(start='2021-01-01', periods=10),
+            'Region': ['Africa'] * 10,
+            'Vaccines': list(range(1, 11))
+        })
+        
+        with self.assertRaises(KeyError):
+            lag_analysis_region(incomplete_data)  # Should raise KeyError due to missing 'Cases'
 if __name__ == '__main__':
     unittest.main()

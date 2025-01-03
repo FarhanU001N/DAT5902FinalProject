@@ -51,21 +51,34 @@ def trend_analysis(data):
         plt.show()
 
 
-def lag_analysis_region(data, selected_regions=None, max_lag_weeks=30):
+def lag_analysis_region(data, selected_regions=None, max_lag_months=30):
     if selected_regions is None:
-        selected_regions = ['Africa', 'Asia', 'North America', 'South America', 'Europe','Oceania']
+        selected_regions = ['Africa', 'Asia', 'North America', 'South America', 'Europe', 'Oceania']
     
-    lags = range(0, max_lag_weeks + 1)
+    lags = range(0, max_lag_months + 1)
     region_correlations = {}
 
     # Filter data for selected regions
     filtered_data = data[data['Region'].isin(selected_regions)]
 
+    # Check if the filtered data is empty
+    if filtered_data.empty:
+        print("No data available for the selected regions.")
+        return {}
+
     # Loop through each region
     for region in selected_regions:
         subset = filtered_data[filtered_data['Region'] == region].sort_values('Day')
+        if subset.empty:
+            region_correlations[region] = [np.nan] * (max_lag_months + 1)
+            continue
+        
         vaccines = subset['Vaccines'].values
         cases = subset['Cases'].values
+
+        if len(vaccines) == 0 or len(cases) == 0:
+            region_correlations[region] = [np.nan] * (max_lag_months + 1)
+            continue
 
         # Calculate correlations for weekly lags
         correlations = []
@@ -80,17 +93,7 @@ def lag_analysis_region(data, selected_regions=None, max_lag_weeks=30):
 
         region_correlations[region] = correlations
 
-    # Plot correlation for each region
-    plt.figure(figsize=(12, 8))
-    for region, correlations in region_correlations.items():
-        plt.plot(lags, correlations, marker='o', label=region)
-
-    plt.title("Regional Correlation Between Vaccines and Cases (Monthly Lag)")
-    plt.xlabel("Lag (Months)")
-    plt.ylabel("Correlation")
-    plt.legend()
-    plt.grid()
-    plt.show()
+    return region_correlations
 
 def hypothesis_testing(data):
     regions = data['Region'].unique()
