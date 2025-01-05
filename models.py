@@ -123,18 +123,29 @@ def lagged_effect_analysis(data, lag_weeks=100):
     # Convert lag from weeks to days (assuming 7 days per week)
     lag_days = lag_weeks * 7 
     
-    # Sort data by date
+    # Sort data by date and filter by regions
     data = data.sort_values(['Region', 'Day']).reset_index(drop=True)
-    data = data[data['Region'].isin(['Africa', 'Asia', 'North America', 'South America', 'Europe','Oceania'])]
+    data = data[data['Region'].isin(['Africa', 'Asia', 'North America', 'South America', 'Europe', 'Oceania'])]
+    
     def apply_lag(group):
         group = group.copy()
         group['Lagged Cases'] = group['Cases'].shift(-lag_days)
         return group
     
     lagged_data = data.groupby('Region').apply(apply_lag).reset_index(drop=True)
-    
+   
     # Drop rows with NaN values after shifting
+    if 'Lagged Cases' not in lagged_data:
+        print("No valid data available after applying lag.")
+        return None
+    
     lagged_data = lagged_data.dropna(subset=['Vaccines', 'Lagged Cases'])
+    
+    # Check if sufficient data remains for analysis
+    if lagged_data.empty:
+        print("No valid data remaining for analysis.")
+        return None
+    
     # Linear regression to quantify relationship
     X = lagged_data['Vaccines'].values.reshape(-1, 1)
     y = lagged_data['Lagged Cases'].values
@@ -158,8 +169,7 @@ def lagged_effect_analysis(data, lag_weeks=100):
     print(f"Intercept: {model.intercept_:.2f}")
     print(f"Coefficient: {model.coef_[0]:.2f}")
     print(f"R-squared: {model.score(X, y):.2f}")
-
-
+    return True
 
 #trend_analysis(joineddf)
 #lag_analysis_region(joineddf)

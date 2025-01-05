@@ -4,7 +4,7 @@ import numpy as np
 from unittest.mock import patch
 # Import the function to be tested
 from datafunctions import format_join
-from models import trend_analysis,lag_analysis_region
+from models import trend_analysis,lag_analysis_region,lagged_effect_analysis
 class TestReadFormatJoin(unittest.TestCase):
     def setUp(self):
         # Mock CSV data for testing
@@ -94,7 +94,7 @@ class TestLagAnalysisRegion(unittest.TestCase):
         result = lag_analysis_region(self.data)
         self.assertIn('Africa', result)
         self.assertIn('Asia', result)
-        self.assertEqual(len(result['Africa']), 31)  # 0 to max_lag_weeks (30) inclusive
+        self.assertEqual(len(result['Africa']), 31)  # 0 to max_lag_months (30) inclusive
         self.assertEqual(len(result['Asia']), 31)
 
     def test_lag_analysis_region_custom_regions(self):
@@ -129,5 +129,54 @@ class TestLagAnalysisRegion(unittest.TestCase):
         
         with self.assertRaises(KeyError):
             lag_analysis_region(incomplete_data)  # Should raise KeyError due to missing 'Cases'
+class TestLaggedEffectAnalysis(unittest.TestCase):
+    @patch('matplotlib.pyplot.show')  # Mock plt.show() to prevent plots during testing
+    def test_valid_data(self,mock_show):
+        # Create a sample DataFrame
+        data = pd.DataFrame({
+            'Day': pd.date_range(start='2021-01-01', periods=60),
+            'Region': ['Africa'] * 30 + ['Asia'] * 30,
+            'Vaccines': list(range(1, 31)) * 2,
+            'Cases': list(range(1, 31)) * 2
+        })
+
+        # Call the function with sample data
+        result = lagged_effect_analysis(data, lag_weeks=1)
+        mock_show.assert_called_once()
+        # Check if the function runs without errors (test case for correctness)
+        self.assertIsNotNone(result)
+    
+    @patch('matplotlib.pyplot.show')  # Mock plt.show()
+    def test_empty_data_after_filtering(self, mock_show):
+        data = pd.DataFrame({
+            'Region': ['Unknown', 'Unknown'],
+            'Day': ['2025-01-01', '2025-01-02'],
+            'Cases': [100, 200],
+            'Vaccines': [10, 20]
+        })
+
+        # Call the function with test data
+        result = lagged_effect_analysis(data, lag_weeks=1)
+
+        # Assert that plt.show() was not called since the function should return early
+        mock_show.assert_not_called()
+
+        # Assert the function returned None
+        self.assertIsNone(result)
+
+    def test_no_lag_cases(self):
+        # Create data with insufficient lagged rows
+        data = pd.DataFrame({
+            'Region': ['Africa', 'Africa'],
+            'Day': ['2025-01-01', '2025-01-02'],
+            'Cases': [100, 200],
+            'Vaccines': [10, 20]
+        })
+
+        # Call the function with a large lag_weeks value
+        result = lagged_effect_analysis(data, lag_weeks=1000)
+        
+        # Expect the function to return None
+        self.assertIsNone(result)
 if __name__ == '__main__':
     unittest.main()
