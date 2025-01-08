@@ -93,13 +93,13 @@ def lag_analysis_region(data, selected_regions=None, max_lag_months=30):
     plt.close()
     return region_correlations
 
-def lagged_effect_analysis(data, lag_weeks=100):
+def lagged_effect_analysis(data,selected_regions=['Africa', 'Asia', 'North America', 'South America', 'Europe', 'Oceania'] ,lag_weeks=100):
     # Convert lag from weeks to days (assuming 7 days per week)
     lag_days = lag_weeks * 7 
     
     # Sort data by date and filter by regions
     data = data.sort_values(['Region', 'Day']).reset_index(drop=True)
-    data = data[data['Region'].isin(['Africa', 'Asia', 'North America', 'South America', 'Europe', 'Oceania'])]
+    data = data[data['Region'].isin(selected_regions)]
     
     def apply_lag(group):
         group = group.copy()
