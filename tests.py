@@ -2,6 +2,8 @@ import unittest
 import pandas as pd
 import numpy as np
 from unittest.mock import patch
+import os
+import glob
 # Import the function to be tested
 from datafunction import format_join
 from models import trend_analysis,lag_analysis_region,lagged_effect_analysis
@@ -45,29 +47,30 @@ class TestTrendAnalysis(unittest.TestCase):
             'Cases': [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
             'Vaccines': [50, 100, 150, 200, 250, 300, 350, 400, 450, 500]
         })
-
-    @patch("matplotlib.pyplot.show")
-    def test_trend_analysis(self, mock_show):
+        folder_path = 'visualisations'
+        if os.path.exists(folder_path):
+            files = glob.glob(f"{folder_path}/*")
+            for file in files:
+                os.remove(file)
+        else:
+            os.makedirs(folder_path)
+    
+    def test_trend_analysis(self):
         """Test trend_analysis with valid input data."""
         # Call the function
         trend_analysis(self.data)
-        
-        # Check that plt.show() was called 5 times (once for each region in selected_regions)
-        self.assertEqual(mock_show.call_count, 5)
-
-        # Validate filtering: Only selected_regions should remain
         selected_regions = ['Africa', 'Asia', 'North America', 'South America', 'Europe']
-        filtered_data = self.data[self.data['Region'].isin(selected_regions)]
-        self.assertEqual(len(filtered_data), 8)  # Count of rows matching selected regions
+        for region in selected_regions:
+            file_path = f"visualisations/{region}_trend_analysis.png"
+            self.assertTrue(os.path.exists(file_path))
 
     def test_trend_analysis_empty(self):
         """Test trend_analysis with an empty DataFrame."""
         empty_data = pd.DataFrame(columns=['Day', 'Region', 'Cases', 'Vaccines'])
-        
-        # Check that it runs without error
-        with patch("matplotlib.pyplot.show") as mock_show:
-            trend_analysis(empty_data)
-            mock_show.assert_not_called()  # No plots should be shown
+        trend_analysis(empty_data)
+        # Ensure no files are created
+        files = os.listdir("visualisations")
+        self.assertEqual(len(files), 0)
 
     def test_trend_analysis_missing_columns(self):
         """Test trend_analysis with missing columns."""
@@ -81,6 +84,7 @@ class TestTrendAnalysis(unittest.TestCase):
             trend_analysis(incomplete_data)  # Should raise KeyError due to missing 'Vaccines' column
 class TestLagAnalysisRegion(unittest.TestCase):
     def setUp(self):
+        os.makedirs("visualisations", exist_ok=True)
         """Set up sample data for testing."""
         self.data = pd.DataFrame({
             'Day': pd.date_range(start='2021-01-01', periods=60),
@@ -91,11 +95,9 @@ class TestLagAnalysisRegion(unittest.TestCase):
 
     def test_lag_analysis_region_default(self):
         """Test lag_analysis_region with default parameters."""
-        result = lag_analysis_region(self.data)
-        self.assertIn('Africa', result)
-        self.assertIn('Asia', result)
-        self.assertEqual(len(result['Africa']), 31)  # 0 to max_lag_months (30) inclusive
-        self.assertEqual(len(result['Asia']), 31)
+        lag_analysis_region(self.data)
+        file_path = "visualisations/lag_analysis.png"
+        self.assertTrue(os.path.exists(file_path))
 
     def test_lag_analysis_region_custom_regions(self):
         """Test lag_analysis_region with custom selected regions."""
@@ -130,8 +132,10 @@ class TestLagAnalysisRegion(unittest.TestCase):
         with self.assertRaises(KeyError):
             lag_analysis_region(incomplete_data)  # Should raise KeyError due to missing 'Cases'
 class TestLaggedEffectAnalysis(unittest.TestCase):
-    @patch('matplotlib.pyplot.show')  # Mock plt.show() to prevent plots during testing
-    def test_valid_data(self,mock_show):
+    def setUp(self):
+        os.makedirs("visualisations", exist_ok=True)
+    
+    def test_valid_data(self):
         # Create a sample DataFrame
         data = pd.DataFrame({
             'Day': pd.date_range(start='2021-01-01', periods=60),
@@ -139,15 +143,13 @@ class TestLaggedEffectAnalysis(unittest.TestCase):
             'Vaccines': list(range(1, 31)) * 2,
             'Cases': list(range(1, 31)) * 2
         })
-
-        # Call the function with sample data
         result = lagged_effect_analysis(data, lag_weeks=1)
-        mock_show.assert_called_once()
-        # Check if the function runs without errors (test case for correctness)
-        self.assertIsNotNone(result)
+        file_path = "visualisations/lag_effect_analysis.png"
+        self.assertTrue(os.path.exists(file_path))
+        self.assertTrue(result)
     
-    @patch('matplotlib.pyplot.show')  # Mock plt.show()
-    def test_empty_data_after_filtering(self, mock_show):
+    
+    def test_empty_data_after_filtering(self):
         data = pd.DataFrame({
             'Region': ['Unknown', 'Unknown'],
             'Day': ['2025-01-01', '2025-01-02'],
@@ -157,9 +159,6 @@ class TestLaggedEffectAnalysis(unittest.TestCase):
 
         # Call the function with test data
         result = lagged_effect_analysis(data, lag_weeks=1)
-
-        # Assert that plt.show() was not called since the function should return early
-        mock_show.assert_not_called()
 
         # Assert the function returned None
         self.assertIsNone(result)
