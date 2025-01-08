@@ -35,10 +35,10 @@ def trend_analysis(data):
         
         # Title and legend
         plt.title(f"Trends in Vaccination and COVID-19 Cases: {region}")
-        plt.legend(loc="upper left")
-        plt.show()
-
-
+        ax1.legend(loc='upper left', bbox_to_anchor=(0.75, 1))
+        ax2.legend(loc='upper left', bbox_to_anchor=(0.75, 0.95))
+        plt.savefig(f"visualisations/{region}_trend_analysis.png")
+        plt.close()
 def lag_analysis_region(data, selected_regions=None, max_lag_months=30):
     if selected_regions is None:
         selected_regions = ['Africa', 'Asia', 'North America', 'South America', 'Europe', 'Oceania']
@@ -89,7 +89,8 @@ def lag_analysis_region(data, selected_regions=None, max_lag_months=30):
     plt.ylabel("Correlation")
     plt.legend()
     plt.grid()
-    plt.show()
+    plt.savefig(f"visualisations/lag_analysis.png")
+    plt.close()
     return region_correlations
 
 def lagged_effect_analysis(data, lag_weeks=100):
@@ -135,8 +136,8 @@ def lagged_effect_analysis(data, lag_weeks=100):
     plt.ylabel(f"COVID-19 Cases (Lagged by {lag_weeks} weeks)")
     plt.legend()
     plt.grid()
-    plt.show()
-    
+    plt.savefig(f"visualisations/lag_effect_analysis.png")
+    plt.close()
     # Print regression summary
     print(f"Regression Summary for {lag_weeks}-Week Lag:")
     print(f"Intercept: {model.intercept_:.2f}")
