@@ -84,32 +84,17 @@ def lag_analysis_region(data, selected_regions=None, max_lag_months=30):
                 correlations.append(np.nan)  # Append NaN for invalid lags
 
         region_correlations[region] = correlations
-
+         # Plot correlation for each region
+    plt.figure(figsize=(12, 8))
+    for region, correlations in region_correlations.items():
+        plt.plot(lags, correlations, marker='o', label=region)
+    plt.title("Regional Correlation Between Vaccines and Cases (Monthly Lag)")
+    plt.xlabel("Lag (Months)")
+    plt.ylabel("Correlation")
+    plt.legend()
+    plt.grid()
+    plt.show()
     return region_correlations
-
-def hypothesis_testing(data):
-    regions = data['Region'].unique()
-    high_vaccine_regions = []
-    low_vaccine_regions = []
-    
-    for region in regions:
-        subset = data[data['Region'] == region]
-        avg_vaccines = subset['Vaccines'].mean()
-        if avg_vaccines > data['Vaccines'].mean():
-            high_vaccine_regions.append(region)
-        else:
-            low_vaccine_regions.append(region)
-    
-    # Compare cases
-    high_cases = data[data['Region'].isin(high_vaccine_regions)]['Cases']
-    low_cases = data[data['Region'].isin(low_vaccine_regions)]['Cases']
-    t_stat, p_value = ttest_ind(high_cases, low_cases, equal_var=False)
-    
-    print(f"T-statistic: {t_stat}, P-value: {p_value}")
-    if p_value < 0.05:
-        print("Significant difference between high and low vaccination regions.")
-    else:
-        print("No significant difference between high and low vaccination regions.")
 
 def lagged_effect_analysis(data, lag_weeks=100):
     # Convert lag from weeks to days (assuming 7 days per week)
