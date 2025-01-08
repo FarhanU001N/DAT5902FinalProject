@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from unittest.mock import patch
 # Import the function to be tested
-from datafunctions import format_join
+from datafunction import format_join
 from models import trend_analysis,lag_analysis_region,lagged_effect_analysis
 class TestReadFormatJoin(unittest.TestCase):
     def setUp(self):

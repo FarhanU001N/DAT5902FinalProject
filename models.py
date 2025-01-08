@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import ttest_ind
-from datafunctions import format_join
 from sklearn.linear_model import LinearRegression
 
 def trend_analysis(data):

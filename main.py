@@ -1,5 +1,5 @@
 import pandas as pd
-from datafunctions import format_join
+from datafunction import format_join
 from models import trend_analysis,lag_analysis_region,lagged_effect_analysis
 joineddf=format_join(pd.read_csv('data/daily-covid-19-vaccine-doses.csv'),pd.read_csv('data/daily-new-confirmed-covid-19-cases.csv'))
  
