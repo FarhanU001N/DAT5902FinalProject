@@ -5,14 +5,12 @@ import seaborn as sns
 from sklearn.linear_model import LinearRegression
 
 def trend_analysis(data):
-    selected_regions = ['Africa', 'Asia', 'North America', 'South America', 'Europe']
+    selected_regions = ['Africa', 'Asia', 'North America', 'South America', 'Europe','World']
     filtered_data = data[data['Region'].isin(selected_regions)]
 
     if filtered_data.empty:
         print("No data available for selected regions.")
         return
-
-    plt.figure(figsize=(12, 6))
 
     for region in selected_regions:
         subset = filtered_data[filtered_data['Region'] == region]
