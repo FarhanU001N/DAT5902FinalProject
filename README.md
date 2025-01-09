@@ -40,8 +40,8 @@ To run the analysis and generate visualizations locally:
 
 1. Clone the repository:  
     ```bash
-    git clone <your-repository-link>  
-    cd <your-repository-folder>  
+    git clone https://github.com/FarhanU001N/DAT5902FinalProject
+    cd DAT5902FinalProject 
 
 2. Install the required dependencies from 'requrements.txt':
     ```bash
