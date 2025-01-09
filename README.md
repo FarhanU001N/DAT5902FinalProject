@@ -36,7 +36,7 @@ To run the analysis and generate visualizations locally:
     git clone https://github.com/FarhanU001N/DAT5902FinalProject
     cd DAT5902FinalProject 
 
-2. Install the required dependencies from 'requrements.txt':
+2. Install the required dependencies from 'requirements.txt':
     ```bash
     pip install -r requirements.txt
 
@@ -46,7 +46,7 @@ To run the analysis and generate visualizations locally:
 
 6. To execute the test suite:
     ```bash
-    unitests tests.py
+    python -m unittest tests.py
 
 7. View the visualisations:
 
