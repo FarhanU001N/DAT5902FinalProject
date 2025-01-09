@@ -21,5 +21,5 @@ else:
 
 trend_analysis(joineddf)
 lag_analysis_region(joineddf)
-lagged_effect_analysis(joineddf,selected_regions=['Africa', 'North America', 'South America', 'Europe', 'Oceania'] ,lag_weeks=109) 
+lagged_effect_analysis(joineddf,selected_regions=['Africa', 'North America', 'South America', 'Europe', 'Oceania'] ,lag_weeks=108) 
 
