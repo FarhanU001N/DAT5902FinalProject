@@ -1,6 +1,8 @@
 # COVID-19 Vaccination and Cases Analysis  
 An Analysis of the Impact of Vaccinations on COVID-19 Cases  
 
+Author:Farhan Uddin
+
 ## 1. Overview  
 This repository contains the code used for the analysis of exploring the relationship between COVID-19 vaccinations and case numbers over time. By analysing temporal patterns and performing lag-based correlations, this project seeks to understand whether vaccination efforts have had a delayed impact on reducing COVID-19 cases.  
 
